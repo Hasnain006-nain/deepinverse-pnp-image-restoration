@@ -1,0 +1,2 @@
+image_name,blur_sigma,noise_sigma,psnr_before,psnr_after,psnr_improvement,ssim_before,ssim_after,ssim_improvement,runtime_sec
+astronaut,2.0,0.03,19.204478871937468,24.174828733902714,4.970349861965246,0.57114655,0.8476112,0.27646464,0.10478425025939941

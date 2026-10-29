@@ -1,0 +1,14 @@
+# Python / notebook temporary files
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+.env
+.env.*
+!environment.json
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.zip
+.DS_Store
