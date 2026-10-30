@@ -99,7 +99,7 @@ The magnitude of improvement depends directly on the frequency spectrum of the u
 <p><i>Figure 2: Ground truth, degraded input, Total Variation (TV-PGD) reconstruction, and DRUNet DPIR output.</i></p>
 </div>
 
-| Image | Degraded Input | Classical TV-PGD [5] | Learned DRUNet DPIR [2] | PSNR Gain | TV Runtime | DPIR Runtime |
+| Image | Degraded Input | Classical TV-PGD [7] | Learned DRUNet DPIR [2] | PSNR Gain | TV Runtime | DPIR Runtime |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Astronaut** | 19.18 dB | 22.23 dB | **24.13 dB** | **+1.90 dB** | 2.64 s | **0.37 s** *(7.1× faster)* |
 | **Chelsea** | 24.57 dB | 27.22 dB | **29.74 dB** | **+2.52 dB** | 2.66 s | **0.35 s** *(7.6× faster)* |
@@ -187,7 +187,7 @@ python scripts/generate_pdf_report.py
 | **Computational Imaging Package** | DeepInverse | `0.5.0` |
 | **Scientific Computing** | NumPy / SciPy | `2.1.3` / `1.14.1` |
 | **Visualization & Processing** | Matplotlib / scikit-image | `3.10.0` / `0.25.2` |
-| **Document Compiler** | ReportLab | `4.2.5` |
+| **Document Compiler** | ReportLab | `5.1.0` |
 | **GPU Hardware** | NVIDIA Tesla T4 | 16 GB VRAM |
 
 File integrity is cryptographically validated using SHA-256 hashes recorded in [`SHA256SUMS.txt`](SHA256SUMS.txt).
@@ -238,17 +238,17 @@ deepinverse-pnp-image-restoration/
 ## ⚠️ Limitations & Scoping Statement
 
 1. **Sample Cohort:** The benchmark evaluates four images over five noise seeds (20 paired trials). While sufficient to confirm consistent paired behavior on this sample, it does not represent a population-wide claim across heterogeneous datasets.
-2. **Heuristic Coarse Forward Operator:** The $64\times 64$ blur operator was formed by bicubic resizing of the fine blur kernel rather than constructing a true Galerkin restriction operator $A_c = R A P$.
-3. **Model Scope:** This project benchmarks classical and deep denoiser Plug-and-Play restoration (DRUNet-DPIR). It does not implement diffusion models or flow-matching algorithms [4].
+2. **Heuristic Coarse Forward Operator:** The $64\times 64$ blur operator was formed by bicubic resizing of the fine blur kernel rather than constructing a true Galerkin restriction operator $A_c = R A P$ [10].
+3. **Model Scope:** This project benchmarks classical and deep denoiser Plug-and-Play restoration (DRUNet-DPIR). It does not implement diffusion models or flow-matching algorithms [11], nor untrained network priors [12].
 4. **Execution Ledger:** All timing data reflects CUDA-synchronized single-session execution on an NVIDIA Tesla T4 GPU.
 
 ---
 
 ## 📚 Verified Academic References
 
-All citations have been verified against primary publisher and indexing databases:
+All 12 citations are primary, peer-reviewed publications verified against official DOI and indexing records, corresponding to Section 14 of the research report:
 
-1. **J. Tachella, M. Terris, S. Hurault, A. Wang, et al.**, *"DeepInverse: A Python package for solving imaging inverse problems with deep learning,"* *Journal of Open Source Software*, vol. 10, no. 115, p. 8923, 2025.  
+1. **J. Tachella, M. Terris, S. Hurault, A. Wang, et al.**, *"DeepInverse: A Python package for solving imaging inverse problems with deep learning,"* *Journal of Open Source Software (JOSS)*, vol. 10, no. 115, p. 8923, 2025.  
    DOI: [`10.21105/joss.08923`](https://doi.org/10.21105/joss.08923) • arXiv: [`2505.20160`](https://arxiv.org/abs/2505.20160)
 
 2. **K. Zhang, Y. Li, W. Zuo, L. Zhang, L. Van Gool, and R. Timofte**, *"Plug-and-Play Image Restoration with Deep Denoiser Prior,"* *IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)*, vol. 44, no. 10, pp. 6360–6376, Oct. 2022.  
@@ -257,11 +257,32 @@ All citations have been verified against primary publisher and indexing database
 3. **S. V. Venkatakrishnan, C. A. Bouman, and B. Wohlberg**, *"Plug-and-Play Priors for Model Based Reconstruction,"* in *IEEE Global Conference on Signal and Information Processing (GlobalSIP)*, pp. 945–948, Dec. 2013.  
    DOI: [`10.1109/GlobalSIP.2013.6737048`](https://doi.org/10.1109/GlobalSIP.2013.6737048)
 
-4. **S. Martin, A. Gagneux, P. Hagemann, and G. Steidl**, *"PnP-Flow: Plug-and-Play Image Restoration with Flow Matching,"* in *International Conference on Learning Representations (ICLR)*, 2025.  
-   OpenReview: [`V2c2YxK0eG`](https://openreview.net/forum?id=V2c2YxK0eG) • arXiv: [`2410.21200`](https://arxiv.org/abs/2410.21200)
+4. **S. H. Chan, X. Wang, and O. A. Elgendy**, *"Plug-and-Play ADMM for Image Restoration: Fixed-Point Convergence and Applications,"* *IEEE Transactions on Computational Imaging (TCI)*, vol. 3, no. 1, pp. 84–98, Mar. 2017.  
+   DOI: [`10.1109/TCI.2016.2629286`](https://doi.org/10.1109/TCI.2016.2629286)
 
-5. **L. I. Rudin, S. Osher, and E. Fatemi**, *"Nonlinear total variation based noise removal algorithms,"* *Physica D: Nonlinear Phenomena*, vol. 60, no. 1–4, pp. 259–268, 1992.  
+5. **E. K. Ryu, J. Liu, S. Wang, X. Chen, Z. Wang, and W. Yin**, *"Plug-and-Play Methods Provably Converge with Properly Trained Denoisers,"* in *International Conference on Machine Learning (ICML)*, PMLR, vol. 97, pp. 5546–5557, Jun. 2019.  
+   PMLR: [`v97/ryu19a.html`](https://proceedings.mlr.press/v97/ryu19a.html) • arXiv: [`1905.05406`](https://arxiv.org/abs/1905.05406)
+
+6. **S. Hurault, A. Leclaire, and N. Papadakis**, *"Proximal Denoiser for Convergent Plug-and-Play,"* in *International Conference on Machine Learning (ICML)*, PMLR, vol. 162, pp. 9484–9504, Jul. 2022.  
+   PMLR: [`v162/hurault22a.html`](https://proceedings.mlr.press/v162/hurault22a.html) • arXiv: [`2111.08058`](https://arxiv.org/abs/2111.08058)
+
+7. **L. I. Rudin, S. Osher, and E. Fatemi**, *"Nonlinear total variation based noise removal algorithms,"* *Physica D: Nonlinear Phenomena*, vol. 60, no. 1–4, pp. 259–268, Nov. 1992.  
    DOI: [`10.1016/0167-2789(92)90242-F`](https://doi.org/10.1016/0167-2789(92)90242-F)
+
+8. **Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli**, *"Image quality assessment: From error visibility to structural similarity,"* *IEEE Transactions on Image Processing (TIP)*, vol. 13, no. 4, pp. 600–612, Apr. 2004.  
+   DOI: [`10.1109/TIP.2003.819861`](https://doi.org/10.1109/TIP.2003.819861)
+
+9. **D. Geman and C. Yang**, *"Nonlinear image recovery with half-quadratic regularization,"* *IEEE Transactions on Image Processing (TIP)*, vol. 4, no. 7, pp. 932–946, Jul. 1995.  
+   DOI: [`10.1109/83.392335`](https://doi.org/10.1109/83.392335)
+
+10. **W. L. Briggs, V. E. Henson, and S. F. McCormick**, *A Multigrid Tutorial*, 2nd ed. Philadelphia, PA: Society for Industrial and Applied Mathematics (SIAM), 2000.  
+    DOI: [`10.1137/1.9780898719505`](https://doi.org/10.1137/1.9780898719505)
+
+11. **S. Martin, A. Gagneux, P. Hagemann, and G. Steidl**, *"PnP-Flow: Plug-and-Play Image Restoration with Flow Matching,"* in *International Conference on Learning Representations (ICLR)*, 2025.  
+    OpenReview: [`V2c2YxK0eG`](https://openreview.net/forum?id=V2c2YxK0eG) • arXiv: [`2410.21200`](https://arxiv.org/abs/2410.21200)
+
+12. **D. Ulyanov, A. Vedaldi, and V. Lempitsky**, *"Deep Image Prior,"* in *IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 9446–9454, Jun. 2018.  
+    DOI: [`10.1109/CVPR.2018.00984`](https://doi.org/10.1109/CVPR.2018.00984) • arXiv: [`1711.10925`](https://arxiv.org/abs/1711.10925)
 
 ---
 
