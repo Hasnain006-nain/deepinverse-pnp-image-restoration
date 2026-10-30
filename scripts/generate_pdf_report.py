@@ -1,11 +1,12 @@
 """
 Generate a professional, publication-grade research report PDF (exactly 6 pages).
 Features:
-- Centered Title, centered Author (Hasnain Haider), centered Subtitle
-- 100% black typography for human academic print
+- Title in EXACTLY 2 lines (centered, bold)
+- Author (Hasnain Haider) centered directly below title
+- Subtitle: Independent Research Benchmark (centered)
+- 100% black typography for human academic print with justified text
 - Full-border academic tables with clean outer borders and inner grids
-- High-fidelity embedded research figures
-- Strictly verified academic references with complete DOI / arXiv provenance
+- Prominent, un-truncated, fully verified REFERENCES section
 - Balanced 6-page budget with zero overflow
 """
 import os
@@ -82,14 +83,15 @@ def S(name, font='Times-Roman', size=9.0, leading=11.8, align=TA_JUSTIFY,
         keepWithNext=keepWithNext, leftIndent=leftIndent
     )
 
-title_style = S('DocTitle', size=14.0, leading=17.5, align=TA_CENTER, bold=True, spaceAfter=4)
+# Typography styles
+title_style = S('DocTitle', size=13.5, leading=17.0, align=TA_CENTER, bold=True, spaceAfter=4)
 author_style = S('DocAuthor', size=10.5, leading=13.5, align=TA_CENTER, bold=True, spaceAfter=2)
 affil_style = S('DocAffil', size=8.5, leading=11.0, align=TA_CENTER, italic=True, spaceAfter=4)
 
-h1_style = S('H1', size=10.2, leading=13.0, bold=True, spaceBefore=6, spaceAfter=2.5, keepWithNext=True, align=TA_LEFT)
-h2_style = S('H2', size=9.2, leading=11.8, bold=True, spaceBefore=4, spaceAfter=2.0, keepWithNext=True, align=TA_LEFT)
-body_style = S('Body', size=8.4, leading=10.9, spaceAfter=2.8)
-body_indent = S('BodyIndent', size=8.4, leading=10.9, leftIndent=10, spaceAfter=2.0)
+h1_style = S('H1', size=10.0, leading=12.5, bold=True, spaceBefore=6, spaceAfter=2.5, keepWithNext=True, align=TA_LEFT)
+h2_style = S('H2', size=9.0, leading=11.5, bold=True, spaceBefore=4, spaceAfter=2.0, keepWithNext=True, align=TA_LEFT)
+body_style = S('Body', size=8.3, leading=10.8, align=TA_JUSTIFY, spaceAfter=2.8)
+body_indent = S('BodyIndent', size=8.3, leading=10.8, align=TA_JUSTIFY, leftIndent=10, spaceAfter=2.0)
 caption_style = S('Caption', size=7.6, leading=9.5, align=TA_CENTER, italic=True, spaceBefore=1.5, spaceAfter=3.5)
 
 # Table cell styles
@@ -98,10 +100,11 @@ tcl = S('TCL', size=7.8, leading=9.5, align=TA_LEFT)
 tcb = S('TCB', size=7.8, leading=9.5, align=TA_CENTER, bold=True)
 tclb = S('TCLB', size=7.8, leading=9.5, align=TA_LEFT, bold=True)
 
-# References
-ref_num = S('RefNum', size=7.8, leading=9.8, bold=True, align=TA_LEFT)
-ref_text = S('RefText', size=7.8, leading=9.8, spaceAfter=1.5, align=TA_LEFT)
-ref_note = S('RefNote', size=6.9, leading=8.3, italic=True, color='#222222', spaceAfter=3.5, align=TA_LEFT, leftIndent=6)
+# References typography (Prominent, cleanly formatted)
+ref_header_style = S('RefHeader', size=10.5, leading=13.0, bold=True, spaceBefore=6, spaceAfter=3.0, align=TA_LEFT)
+ref_num = S('RefNum', size=8.0, leading=10.2, bold=True, align=TA_LEFT)
+ref_text = S('RefText', size=8.0, leading=10.2, align=TA_JUSTIFY, spaceAfter=1.0)
+ref_note = S('RefNote', size=7.0, leading=8.5, italic=True, color='#222222', spaceAfter=3.5, align=TA_LEFT, leftIndent=6)
 
 P = Paragraph
 
@@ -119,7 +122,6 @@ def make_full_border_table(data, col_widths=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 4.0),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]
-    # Subtle alternating row background for clear scanning
     for i in range(1, len(data)):
         if i % 2 == 0:
             style_cmds.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#F8F8F8')))
@@ -130,7 +132,7 @@ def make_full_border_table(data, col_widths=None):
 def build_pdf(out_path):
     FIG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'figures'))
     
-    # 54 pt margins = 0.75 in. Printable width = 504 pt. Printable height = 700 pt.
+    # Printable area: 504 pt width x 704 pt height
     doc = SimpleDocTemplate(
         out_path,
         pagesize=letter,
@@ -142,9 +144,9 @@ def build_pdf(out_path):
     story = []
 
     # =========================================================================
-    # PAGE 1: Centered Title, Hasnain Haider, Abstract Box, Intro, Setup & Fig 1
+    # PAGE 1: Title (EXACTLY 2 LINES), Author (Hasnain Haider), Abstract, Intro, Setup & Fig 1
     # =========================================================================
-    story.append(P("Plug-and-Play Image Restoration:<br/>A Two-Level Coarse-to-Fine Initialization Study<br/>Using DeepInverse and DRUNet", title_style))
+    story.append(P("Plug-and-Play Image Restoration with Coarse-to-Fine Initialization:<br/>An Empirical Benchmark Using DeepInverse and DRUNet", title_style))
     story.append(P("Hasnain Haider", author_style))
     story.append(P("Independent Research Benchmark", affil_style))
     story.append(HRFlowable(width="100%", thickness=0.8, color=colors.black, spaceBefore=1, spaceAfter=4))
@@ -432,7 +434,7 @@ def build_pdf(out_path):
     # PAGE 6: Limitations, Table 5 (Full Border), Conclusion & PROMINENT REFERENCES
     # =========================================================================
     story.append(P("11. Limitations and Threats to Validity", h1_style))
-    story.append(P("We explicitly report the following experimental constraints:", body_style))
+    story.append(P("We explicitly report the following experimental constraints in this study:", body_style))
     
     limits = [
         ("Image sample size: ", "Four images evaluated across five seeds demonstrate consistency on this sample, but do not support population-wide statistical claims across heterogeneous natural image distributions."),
@@ -473,16 +475,16 @@ def build_pdf(out_path):
         body_style
     ))
 
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 2))
     
-    # ─── SECTION 14: VERIFIED ACADEMIC REFERENCES (PROMINENT & FULLY VISIBLE) ───
-    story.append(P("14. Verified Academic References", h1_style))
-    story.append(HRFlowable(width="100%", thickness=0.6, color=colors.black, spaceBefore=1, spaceAfter=3))
+    # ─── SECTION 14: VERIFIED ACADEMIC REFERENCES (PROMINENT, VISIBLE, FULLY CITED) ───
+    story.append(P("14. Verified Academic References", ref_header_style))
+    story.append(HRFlowable(width="100%", thickness=0.8, color=colors.black, spaceBefore=1, spaceAfter=4))
 
     verified_refs = [
         ("<b>[1]</b>",
          "J. Tachella, M. Terris, S. Hurault, A. Wang, et al., \"DeepInverse: A Python package for solving imaging inverse problems with deep learning,\" <i>Journal of Open Source Software</i>, vol. 10, no. 115, p. 8923, 2025.",
-         "% Verified via CrossRef / JOSS DOI: https://doi.org/10.21105/joss.08923 (arXiv:2505.20160), checked 2026-10-30"),
+         "% Verified via CrossRef / JOSS DOI: https://doi.org/10.21105/joss.08923 (also arXiv:2505.20160), checked 2026-10-30"),
         ("<b>[2]</b>",
          "K. Zhang, Y. Li, W. Zuo, L. Zhang, L. Van Gool, and R. Timofte, \"Plug-and-Play Image Restoration with Deep Denoiser Prior,\" <i>IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)</i>, vol. 44, no. 10, pp. 6360–6376, Oct. 2022.",
          "% Verified via IEEE Xplore DOI: https://doi.org/10.1109/TPAMI.2021.3088914, checked 2026-10-30"),
@@ -491,7 +493,7 @@ def build_pdf(out_path):
          "% Verified via IEEE Xplore DOI: https://doi.org/10.1109/GlobalSIP.2013.6737048, checked 2026-10-30"),
         ("<b>[4]</b>",
          "S. Martin, A. Gagneux, P. Hagemann, and G. Steidl, \"PnP-Flow: Plug-and-Play Image Restoration with Flow Matching,\" in <i>International Conference on Learning Representations (ICLR)</i>, 2025.",
-         "% Verified via OpenReview: https://openreview.net/forum?id=V2c2YxK0eG (arXiv:2410.21200), checked 2026-10-30"),
+         "% Verified via OpenReview: https://openreview.net/forum?id=V2c2YxK0eG (also arXiv:2410.21200), checked 2026-10-30"),
         ("<b>[5]</b>",
          "L. I. Rudin, S. Osher, and E. Fatemi, \"Nonlinear total variation based noise removal algorithms,\" <i>Physica D: Nonlinear Phenomena</i>, vol. 60, no. 1–4, pp. 259–268, 1992.",
          "% Verified via ScienceDirect / Elsevier DOI: https://doi.org/10.1016/0167-2789(92)90242-F, checked 2026-10-30"),
