@@ -8,6 +8,13 @@ Features:
 - Perfectly balanced 6-page budget with zero overflow and zero awkward white gaps
 - Native figure aspect ratios (no squashed or distorted images)
 - Polished running headers and footers with page numbering (Page X of 6)
+- Rigorous scientific terminology matching actual notebook implementation:
+  * Bilinear interpolation (not bicubic)
+  * Approximate coarse forward operator (blur sigma 1.0, noise sigma 0.015, not resized kernel)
+  * Accurate degradation conditions (E1: 1.0/0.01, E2: 2.0/0.03, E3: 3.0/0.05, no fake 0.07 noise)
+  * Accurate sample description (4 images, 5 seeds, 20 matched observations, 60 runs)
+  * Observation Init positive in 18/20 pairs (90%), Coarse PnP positive in 20/20 pairs (100%)
+  * Accurate figure captions matching actual plotted images
 """
 import os
 import sys
@@ -124,8 +131,8 @@ title_style = S('DocTitle', size=13.5, leading=17.0, align=TA_CENTER, bold=True,
 author_style = S('DocAuthor', size=10.2, leading=13.0, align=TA_CENTER, bold=True, color="#111827", spaceAfter=2)
 affil_style = S('DocAffil', size=8.3, leading=10.8, align=TA_CENTER, italic=True, color="#475569", spaceAfter=3)
 
-h1_style = S('H1', size=9.8, leading=12.4, bold=True, color="#1A365D", spaceBefore=5.0, spaceAfter=2.0, keepWithNext=True, align=TA_LEFT)
-h2_style = S('H2', size=8.8, leading=11.4, bold=True, color="#1E293B", spaceBefore=3.5, spaceAfter=1.8, keepWithNext=True, align=TA_LEFT)
+h1_style = S('H1', size=9.8, leading=12.4, bold=True, color="#1A365D", spaceBefore=4.8, spaceAfter=1.8, keepWithNext=True, align=TA_LEFT)
+h2_style = S('H2', size=8.8, leading=11.4, bold=True, color="#1E293B", spaceBefore=3.5, spaceAfter=1.6, keepWithNext=True, align=TA_LEFT)
 body_style = S('Body', size=8.2, leading=10.9, align=TA_JUSTIFY, color="#1F2937", spaceAfter=2.5)
 body_indent = S('BodyIndent', size=8.2, leading=10.9, align=TA_JUSTIFY, color="#1F2937", leftIndent=11, spaceAfter=2.0)
 
@@ -195,64 +202,64 @@ def build_pdf(out_path):
 
     # Abstract Box - Centered, Justified, Clean Border
     abs_content = (
-        "<b>Abstract</b>—This benchmark investigates whether a two-level coarse-to-fine initialization strategy improves "
-        "Plug-and-Play (PnP) image restoration when paired with a deep residual denoiser prior. Using the open-source DeepInverse "
-        "framework [1] and pretrained DRUNet denoiser weights [2], we evaluate three distinct initialization pipelines across four "
-        "canonical benchmark images (Astronaut, Chelsea, Coffee, Rocket) degraded by Gaussian blur (&sigma; = 2.0) and additive white "
-        "Gaussian noise (&sigma; = 0.03). Across 20 paired image-seed trials (60 total experimental runs executed on an NVIDIA Tesla T4 "
-        "GPU), coarse PnP initialization achieved a mean PSNR of 28.593 dB compared to 28.411 dB for standard direct DPIR and 28.530 dB "
-        "for observation-only initialization. The coarse PnP pipeline produced a positive paired gain in 100% of trials (+0.182 dB average), "
-        "while incurring a 38.7% runtime penalty. Crucially, a controlled ablation reveals that 65% of this improvement (+0.118 dB) is obtained "
-        "solely from the low-pass filtering inherent in resolution downsampling and upsampling, while active coarse denoising contributes "
-        "the remaining +0.064 dB. Performance gains correlate strongly with image frequency content, providing substantial benefit for smooth "
-        "surfaces (+0.397 dB) and negligible gain for dense textures (+0.015 dB). All reproduction scripts, configurations, and raw CSV metrics "
-        "are publicly available under an open-source license."
+        "<b>Abstract</b>—This benchmark investigates whether an exploratory two-level coarse-to-fine initialization strategy "
+        "improves Plug-and-Play (PnP) image restoration when paired with a deep residual denoiser prior. Using the DeepInverse "
+        "computational imaging library [1] and pretrained DRUNet weights [2], we evaluate three distinct initialization pipelines across "
+        "four standard benchmark images (Astronaut, Chelsea, Coffee, Rocket) degraded by Gaussian blur (&sigma;<sub><i>b</i></sub> = 2.0) "
+        "and additive Gaussian noise (&sigma;<sub><i>n</i></sub> = 0.03). Across 20 matched image-seed observations (four images with five noise "
+        "realizations each, yielding 60 total reconstruction runs executed on an NVIDIA Tesla T4 GPU), coarse PnP initialization achieved a mean PSNR "
+        "of 28.593 dB compared to 28.411 dB for standard direct DPIR and 28.530 dB for an observation-cycling control. In paired comparisons on "
+        "identical observations, coarse PnP outperformed direct DPIR in 20 of 20 pairs (+0.182 dB average) while incurring a 38.7% runtime penalty. "
+        "Observation-only resolution cycling using bilinear prolongation achieved a +0.118 dB mean gain (positive in 18 of 20 pairs), supporting the "
+        "hypothesis that initial low-pass filtering accounts for approximately two-thirds of the warm-start benefit on this sample, while active coarse "
+        "denoising contributes +0.064 dB. Observed gains correlate strongly with image frequency content, benefiting smooth surfaces (+0.397 dB on Coffee) "
+        "while providing negligible change for dense textures (+0.015 dB on Chelsea). This study benchmarks deterministic DRUNet-DPIR; no generative flow-matching "
+        "or diffusion model was trained. All reproduction scripts and validation traces are openly available."
     )
-    abs_table = Table([[P(abs_content, S('AbsStyle', size=7.9, leading=10.5, align=TA_JUSTIFY, color="#1E293B"))]], colWidths=[496], hAlign='CENTER')
+    abs_table = Table([[P(abs_content, S('AbsStyle', size=7.8, leading=10.4, align=TA_JUSTIFY, color="#1E293B"))]], colWidths=[496], hAlign='CENTER')
     abs_table.setStyle(TableStyle([
         ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#1A365D")),
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F8FAFC")),
-        ('TOPPADDING', (0,0), (-1,-1), 4.0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4.0),
-        ('LEFTPADDING', (0,0), (-1,-1), 7.5),
-        ('RIGHTPADDING', (0,0), (-1,-1), 7.5),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+        ('LEFTPADDING', (0,0), (-1,-1), 7.0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 7.0),
     ]))
     story.append(abs_table)
     story.append(Spacer(1, 2))
 
     story.append(P("1. Introduction and Problem Context", h1_style))
     story.append(P(
-        "Linear inverse problems in computational imaging require recovering an unknown underlying scene <i>x</i> &isin; &real;<sup><i>n</i></sup> "
-        "from corrupted measurements <i>y</i> = <b>A</b><i>x</i> + <i>n</i>, where <b>A</b> is a forward degradation operator (such as a blur point "
-        "spread function) and <i>n</i> ~ &Nu;(0, &sigma;<sup>2</sup><b>I</b>) represents additive measurement noise. Because <b>A</b> is severely "
-        "ill-conditioned, standard inversion is mathematically ill-posed; naive pseudoinverse solutions catastrophically amplify high-frequency noise, "
-        "necessitating explicit or implicit image priors to regularize the solution manifold.",
+        "Linear inverse problems in computational imaging require recovering an unknown true image <i>x</i> &isin; &real;<sup><i>n</i></sup> "
+        "from corrupted measurements <i>y</i> = <b>A</b><i>x</i> + <i>n</i>, where <b>A</b> represents a forward degradation operator (such as a blur point "
+        "spread function) and <i>n</i> ~ &Nu;(0, &sigma;<sup>2</sup><b>I</b>) represents additive measurement noise. Because <b>A</b> is severely ill-conditioned, "
+        "naive pseudo-inversion amplifies measurement noise catastrophically, necessitating mathematical or learned regularization priors.",
         body_style
     ))
     story.append(P(
-        "Plug-and-Play (PnP) methods, pioneered by Venkatakrishnan et al. [3] and mathematically analyzed for convergence by Chan et al. [4] "
-        "and Ryu et al. [5], replace hand-crafted analytical regularizers (such as Total Variation [7]) with high-capacity deep denoisers "
-        "embedded within proximal splitting algorithms like Half-Quadratic Splitting (HQS) [9] or ADMM. Zhang et al. [2] operationalized this with "
-        "DPIR, incorporating a Deep Residual U-Net (DRUNet) into an iterative HQS schedule to obtain state-of-the-art reconstructions across deblurring, "
-        "super-resolution, and color inpainting without retraining network weights for specific forward operators.",
+        "Plug-and-Play (PnP) frameworks, introduced by Venkatakrishnan et al. [3] and analyzed for convergence by Chan et al. [4] "
+        "and Ryu et al. [5], replace analytical hand-crafted priors (such as Total Variation [7]) with high-capacity deep denoisers "
+        "embedded within proximal splitting algorithms like Half-Quadratic Splitting (HQS) [9]. Zhang et al. [2] operationalized this concept "
+        "with DPIR, deploying a Deep Residual U-Net (DRUNet) inside an 8-iteration HQS schedule to achieve competitive restoration across deblurring, "
+        "super-resolution, and color inpainting tasks without requiring task-specific retraining.",
         body_style
     ))
     story.append(P(
-        "Standard DPIR initializes its fine-scale iterative solver directly from the degraded observation: <i>x</i><sub>0</sub> = <i>y</i>. "
-        "Drawing inspiration from multigrid concepts in numerical scientific computing [10], we investigate whether a coarse-scale warm-start "
-        "accelerates convergence and improves final restoration fidelity. We implement and evaluate this framework systematically using the "
-        "open-source DeepInverse library [1] and modern proximal denoiser priors [6].",
+        "Standard DPIR initializes optimization directly from the degraded measurement: <i>x</i><sub>0</sub> = <i>y</i>. "
+        "Motivated by multilevel ideas in scientific numerical computing [10], we empirically investigate whether initializing fine-scale DPIR "
+        "from a coarse-scale warm-start improves restoration quality on small images. We implement and evaluate this approach systematically using the "
+        "open-source DeepInverse computational imaging package [1] and modern proximal denoiser priors [6].",
         body_style
     ))
 
     story.append(P("2. Forward Degradation Model and Benchmark Setup", h1_style))
     story.append(P(
-        "We selected four standard benchmark images from the scikit-image repository: Astronaut (portrait featuring mixed structural and skin tones), "
-        "Chelsea (tabby cat characterized by dense high-frequency fur patterns), Coffee (ceramic cup with broad uniform gradients), and Rocket "
+        "We evaluated four canonical benchmark images from scikit-image: Astronaut (portrait with mixed geometric contours and facial tones), "
+        "Chelsea (tabby cat characterized by high-frequency fur patterns), Coffee (ceramic cup with broad smooth gradients), and Rocket "
         "(spacecraft featuring sharp geometric boundary edges). All images were standardized to 128 &times; 128 RGB pixels normalized to [0, 1]. "
-        "The degradation operator <b>A</b> applies a 7 &times; 7 Gaussian blur kernel with standard deviation &sigma; = 2.0, followed by additive "
-        "Gaussian noise with standard deviation &sigma; = 0.03. Five independent pseudo-random noise realizations (seeds 0 through 4) were generated "
-        "for each image, yielding 20 distinct paired observations passed identically to each evaluated pipeline.",
+        "The fine-scale forward operator <b>A</b> applies a 7 &times; 7 Gaussian blur kernel with standard deviation &sigma;<sub><i>b</i></sub> = 2.0, followed by "
+        "additive Gaussian noise with &sigma;<sub><i>n</i></sub> = 0.03. Five pseudo-random noise realizations (seeds 2026, 2126, 2226, 2326, 2426) were applied "
+        "to each image, yielding 20 matched image-seed observations passed identically to each evaluated pipeline.",
         body_style
     ))
 
@@ -260,8 +267,8 @@ def build_pdf(out_path):
     if os.path.exists(fig_deg):
         # Native aspect ratio 2.20 (2200x1000)
         story.append(Spacer(1, 1))
-        story.append(Image(fig_deg, width=420, height=191, hAlign='CENTER'))
-        story.append(P("Figure 1. Forward degradation pipeline: clean ground truth, Gaussian blur PSF, 2D frequency spectrum showing severe high-frequency attenuation, and resulting degraded observation.", fig_caption_style))
+        story.append(Image(fig_deg, width=396, height=180, hAlign='CENTER'))
+        story.append(P("Figure 1. Forward degradation model: clean reference image (128 &times; 128) and synthetically degraded observation under Gaussian blur (&sigma;<sub><i>b</i></sub> = 2.0) and additive Gaussian noise (&sigma;<sub><i>n</i></sub> = 0.03).", fig_caption_style))
 
     story.append(PageBreak())
 
@@ -274,24 +281,24 @@ def build_pdf(out_path):
         "The only experimental variable across conditions is the initial state estimate <i>x</i><sub>0</sub>:",
         body_style
     ))
-    story.append(P("• <b>Direct DPIR (Baseline):</b> Standard optimization starting directly from the noisy observation: <i>x</i><sub>0</sub> = <i>y</i>.", body_indent))
-    story.append(P("• <b>Observation Initialization (Control):</b> The measurement <i>y</i> is downsampled to 64 &times; 64 and immediately bicubic-upsampled back to 128 &times; 128 to serve as <i>x</i><sub>0</sub> without coarse denoising, isolating pure resolution-cycling effects.", body_indent))
-    story.append(P("• <b>Coarse PnP Initialization (Proposed):</b> A full DPIR solve is performed at 64 &times; 64 resolution using a scaled blur operator. The coarse solution is upsampled to 128 &times; 128 to warm-start the fine-scale solver.", body_indent))
+    story.append(P("• <b>Direct DPIR (Baseline):</b> Optimization begins directly from the degraded observation: <i>x</i><sub>0</sub> = <i>y</i>.", body_indent))
+    story.append(P("• <b>Observation Initialization (Control):</b> Measurement <i>y</i> is downsampled via 2&times;2 average pooling to 64 &times; 64 and prolonged back to 128 &times; 128 via bilinear interpolation (<code>mode='bilinear', align_corners=False</code>) without coarse denoising, isolating resolution-cycling smoothing effects.", body_indent))
+    story.append(P("• <b>Coarse PnP Initialization (Proposed):</b> An approximate coarse forward model (64 &times; 64, Gaussian blur &sigma;<sub><i>b</i></sub> = 1.0, noise &sigma;<sub><i>n</i></sub> = 0.015) is solved via 8-iteration coarse DPIR. The coarse output is prolonged via bilinear interpolation to warm-start fine-scale 128 &times; 128 DPIR.", body_indent))
 
     story.append(P("4. Experimental Evaluation Protocol", h1_style))
     story.append(P(
         "Reconstruction fidelity is quantified using Peak Signal-to-Noise Ratio (PSNR) and the Structural Similarity Index (SSIM) [8], "
         "evaluated on clipped [0, 1] RGB channels against original ground truth. Wall-clock runtimes were recorded with explicit CUDA "
-        "synchronization on an NVIDIA Tesla T4 GPU (16 GB VRAM). To eliminate noise realization variance, we assess paired differences "
+        "synchronization on an NVIDIA Tesla T4 GPU (16 GB VRAM). To eliminate noise realization variance, we evaluate paired differences "
         "(&Delta;PSNR) across identical degraded inputs.",
         body_style
     ))
 
     story.append(P("5. Quantitative Findings and Empirical Analysis", h1_style))
-    story.append(P("5.1 Aggregate Performance Across 60 Independent Runs", h2_style))
+    story.append(P("5.1 Aggregate Performance Across 20 Matched Observations (60 Total Runs)", h2_style))
     story.append(P(
         "Table I summarizes aggregate performance metrics across all 60 trials (4 images &times; 5 seeds &times; 3 pipelines). "
-        "Coarse PnP initialization delivers the highest mean PSNR (28.593 dB) and SSIM (0.8622), followed by observation initialization (28.530 dB).",
+        "Coarse PnP initialization achieves the highest overall PSNR (28.593 dB) and SSIM (0.8622), followed by observation initialization (28.530 dB).",
         body_style
     ))
 
@@ -308,11 +315,11 @@ def build_pdf(out_path):
 
     story.append(P("5.2 Paired Differences and Consistency Analysis", h2_style))
     story.append(P(
-        "Because background noise realizations introduce variance that can obscure subtle algorithm performance differences, paired comparisons "
-        "on identical degraded inputs provide rigorous statistical verification. Coarse PnP initialization outperformed direct DPIR in "
-        "<b>20 out of 20 trials (100% win rate)</b>, yielding an average gain of +0.182 dB (&plusmn;0.162 dB). It also outperformed observation "
-        "initialization in all 20 trials (+0.064 dB average gain). Furthermore, observation initialization alone achieved a +0.118 dB advantage "
-        "over direct DPIR, demonstrating that roughly two-thirds of the total benefit stems from low-pass pre-smoothing.",
+        "Evaluating paired differences on identical degraded inputs confirms that coarse PnP initialization outperformed direct DPIR in "
+        "<b>20 out of 20 trials (100% win rate)</b>, yielding an average gain of +0.182 dB (&plusmn;0.171 dB). It also surpassed observation "
+        "initialization in all 20 trials (+0.064 dB average gain). Observation initialization alone achieved +0.118 dB over direct DPIR, "
+        "showing positive gains in 18 of 20 trials (90.0%, with minor negative deltas of -0.0008 dB on Chelsea and -0.0018 dB on Rocket), "
+        "indicating that resolution cycling provides an effective low-pass warm-start on smooth image content.",
         body_style
     ))
 
@@ -320,9 +327,9 @@ def build_pdf(out_path):
     story.append(P("TABLE II: PAIRED DIFFERENCE STATISTICS ACROSS 20 IDENTICAL IMAGE-SEED PAIRS", tbl_caption_style))
     t2_data = [
         [P("Paired Comparison Setup", th_left), P("Mean &Delta;PSNR", th_center), P("Std. Dev.", th_center), P("Positive Trials", th_center), P("Empirical Win Rate", th_center)],
-        [P("Coarse PnP vs. Direct DPIR", td_left), P("<b>+0.1820 dB</b>", td_center_bold), P("0.162 dB", td_center), P("20 / 20", td_center), P("<b>100.0%</b>", td_center_bold)],
-        [P("Observation Init vs. Direct DPIR", td_left), P("+0.1183 dB", td_center), P("0.114 dB", td_center), P("20 / 20", td_center), P("100.0%", td_center)],
-        [P("Coarse PnP vs. Observation Init", td_left), P("+0.0637 dB", td_center), P("0.051 dB", td_center), P("20 / 20", td_center), P("100.0%", td_center)],
+        [P("Coarse PnP vs. Direct DPIR", td_left), P("<b>+0.1820 dB</b>", td_center_bold), P("0.171 dB", td_center), P("20 / 20", td_center), P("<b>100.0%</b>", td_center_bold)],
+        [P("Observation Init vs. Direct DPIR", td_left), P("+0.1183 dB", td_center), P("0.122 dB", td_center), P("18 / 20", td_center), P("90.0%", td_center)],
+        [P("Coarse PnP vs. Observation Init", td_left), P("+0.0637 dB", td_center), P("0.059 dB", td_center), P("20 / 20", td_center), P("100.0%", td_center)],
     ]
     story.append(make_centered_table(t2_data, col_widths=[150, 85, 75, 80, 80]))
     story.append(Spacer(1, 3))
@@ -330,7 +337,7 @@ def build_pdf(out_path):
     story.append(P("5.3 Per-Image Frequency Sensitivity Breakdown", h2_style))
     story.append(P(
         "Quantitative gains correlate directly with image spatial frequency distributions. For Coffee (broad smooth gradients), "
-        "coarse PnP achieved a major +0.397 dB boost. For Astronaut (mixed portrait geometry), it gained +0.287 dB. Conversely, "
+        "coarse PnP achieved a notable +0.397 dB boost. For Astronaut (mixed portrait geometry), it gained +0.287 dB. Conversely, "
         "for Rocket (+0.029 dB) and Chelsea (+0.015 dB), improvements were minimal. Downsampling to 64 &times; 64 strips away high spatial "
         "frequencies that define fine textures and edges, rendering coarse warm-starts uninformative for texture-dominated scenes.",
         body_style
@@ -352,11 +359,11 @@ def build_pdf(out_path):
     # =========================================================================
     # PAGE 3: Ablation (Figure 2), Classical TV vs DPIR (Table 4) & In-Depth Benchmark
     # =========================================================================
-    story.append(P("5.4 Per-Seed Ablation Distribution and Consistency", h2_style))
+    story.append(P("5.4 Per-Image Ablation Analysis and Method Variance", h2_style))
     story.append(P(
-        "Figure 2 displays individual PSNR measurements across all five noise seeds for each test image. "
-        "The consistency of the coarse PnP warm-start is visually evident: green points strictly dominate blue and orange points for Coffee "
-        "and Astronaut across all seeds, demonstrating that the observed +0.182 dB benefit is not an artifact of favorable noise draws.",
+        "Figure 2 illustrates the mean paired PSNR improvements relative to baseline direct DPIR for both Observation Initialization and "
+        "Coarse PnP Initialization across the four test images. The empirical advantage of coarse PnP is pronounced on Coffee (+0.397 dB) "
+        "and Astronaut (+0.287 dB), whereas Rocket and Chelsea show minimal response to resolution cycling.",
         body_style
     ))
 
@@ -364,7 +371,7 @@ def build_pdf(out_path):
     if os.path.exists(fig_abl):
         # Native aspect ratio: 2.026 (2970x1466) -> width 440, height 217
         story.append(Image(fig_abl, width=440, height=217, hAlign='CENTER'))
-        story.append(P("Figure 2. Per-seed PSNR distribution across initialization pipelines. Coarse PnP (green) consistently outperforms direct DPIR (blue) on smooth targets (Coffee, Astronaut), while Chelsea and Rocket exhibit tight clustering.", fig_caption_style))
+        story.append(P("Figure 2. Initialization ablation: mean paired PSNR difference (dB relative to Direct DPIR) across the four benchmark images for Observation Initialization and Coarse PnP Initialization (averaged over five noise realizations per image).", fig_caption_style))
 
     story.append(Spacer(1, 2))
     story.append(P("6. Baseline Benchmark: Classical Total Variation vs. Learned DPIR Prior", h1_style))
@@ -373,7 +380,8 @@ def build_pdf(out_path):
         "regularization [7]. Classical TV defines an explicit energy functional min<sub><i>x</i></sub> (1/2)||<b>A</b><i>x</i> - <i>y</i>||<sup>2</sup> + &lambda;||&nabla;<i>x</i>||<sub>1</sub>, "
         "solved via Proximal Gradient Descent (TV-PGD) with standard step-size scheduling. In contrast, DPIR replaces the explicit subgradient operator with a learned "
         "deep residual denoiser [2, 6] embedded within Half-Quadratic Splitting (HQS) [9]. As detailed in Table IV, learned DPIR outperforms TV-PGD by +1.89 dB to +2.66 dB "
-        "across all test images while operating ~7&times; faster (0.35–0.37 s vs. 2.35–2.66 s on Tesla T4).",
+        "across all test images while operating ~7&times; faster (0.35–0.37 s vs. 2.35–2.66 s on Tesla T4). Note that the TV-PGD baseline was evaluated with standard parameters "
+        "and was not exhaustively grid-tuned for each specific image.",
         body_style
     ))
 
@@ -391,7 +399,7 @@ def build_pdf(out_path):
 
     story.append(P("6.1 Qualitative Artifact Analysis: TV Staircasing vs. Deep Manifold Priors", h2_style))
     story.append(P(
-        "The mathematical root of TV-PGD's underperformance lies in its L1 gradient penalty, which strictly penalizes non-zero derivatives and enforces "
+        "The mathematical root of TV-PGD's lower fidelity lies in its L1 gradient penalty, which penalizes non-zero derivatives and enforces "
         "piecewise-constant solutions. This produces pronounced 'staircasing' artifacts, flattening subtle gradations in facial skin tones (Astronaut) and "
         "curved ceramic specularities (Coffee). Conversely, the pretrained DRUNet denoiser prior acts as an implicit projection onto a rich natural image manifold, "
         "preserving continuous tone transitions and authentic textural sharpness without parameter retuning.",
@@ -407,14 +415,14 @@ def build_pdf(out_path):
     if os.path.exists(fig_tv):
         # Native aspect ratio: 1.026 (4237x4131) -> width 268, height 261
         story.append(Image(fig_tv, width=268, height=261, hAlign='CENTER'))
-        story.append(P("Figure 3. Visual comparison across benchmark images: ground truth, degraded observation (&sigma;=2.0 blur, &sigma;=0.03 noise), classical TV-PGD reconstruction, and learned DRUNet DPIR output.", fig_caption_style))
+        story.append(P("Figure 3. Visual comparison across benchmark images: clean ground truth, degraded observation (&sigma;<sub><i>b</i></sub> = 2.0, &sigma;<sub><i>n</i></sub> = 0.03), classical TV-PGD reconstruction, and learned DRUNet DPIR output.", fig_caption_style))
 
     story.append(Spacer(1, 2))
     story.append(P("7. Stage-by-Stage Visual Progression in Two-Level Restoration", h1_style))
     story.append(P(
         "Figure 4 documents the intermediate transformation stages of the two-level pipeline. The initial 64 &times; 64 coarse reconstruction "
-        "suppresses observation noise and recovers global luminance. Subsequent bicubic prolongation produces a smooth initial estimate "
-        "that provides the 128 &times; 128 fine-scale solver with a well-conditioned starting point, accelerating high-frequency detail recovery.",
+        "suppresses observation noise and recovers global luminance. Subsequent bilinear prolongation (<code>mode='bilinear', align_corners=False</code>) "
+        "produces a smooth initial estimate that provides the 128 &times; 128 fine-scale solver with a well-conditioned starting point, accelerating detail recovery.",
         body_style
     ))
 
@@ -422,7 +430,7 @@ def build_pdf(out_path):
     if os.path.exists(fig_ml):
         # Native aspect ratio: 1.249 (5158x4131) -> width 305, height 244
         story.append(Image(fig_ml, width=305, height=244, hAlign='CENTER'))
-        story.append(P("Figure 4. Progression through the two-level coarse-to-fine pipeline: degraded observation, coarse 64 &times; 64 restoration, upsampled prolongation, and final fine 128 &times; 128 restored output.", fig_caption_style))
+        story.append(P("Figure 4. Progression through the two-level coarse-to-fine pipeline: clean reference, degraded observation, direct DPIR, coarse 64 &times; 64 restoration, and two-level DPIR output using bilinear prolongation.", fig_caption_style))
 
     story.append(PageBreak())
 
@@ -431,10 +439,11 @@ def build_pdf(out_path):
     # =========================================================================
     story.append(P("8. Convergence Dynamics and Numerical Stability", h1_style))
     story.append(P(
-        "To verify optimization stability, we tracked objective PSNR trajectories and relative iterate residuals "
-        "||<i>x</i><sup>(<i>k</i>)</sup> - <i>x</i><sup>(<i>k</i>-1)</sup>|| / ||<i>x</i><sup>(<i>k</i>)</sup>|| across HQS iterations. "
-        "As depicted in Figure 5, the solver exhibits rapid monotonic ascent during iterations 1–4, stabilizing asymptotically by iteration 6. "
-        "Relative residuals plunge below 10<sup>-2</sup> within five iterations across all initializations, establishing robust convergence [4, 5].",
+        "To evaluate optimization behavior, we tracked objective PSNR trajectories and relative iterate residuals "
+        "||<i>x</i><sup>(<i>k</i>)</sup> - <i>x</i><sup>(<i>k</i>-1)</sup>|| / ||<i>x</i><sup>(<i>k</i>)</sup>|| across iterations. "
+        "As depicted in Figure 5, DPIR exhibits rapid monotonic ascent during iterations 1–4, stabilizing asymptotically by iteration 6. "
+        "Relative residuals decline below 10<sup>-2</sup> within five iterations for DPIR [4, 5]. We emphasize that while empirical residual decay "
+        "demonstrates dependable numerical stabilization within the evaluated 8-iteration budget, it does not constitute a formal mathematical proof of fixed-point convergence.",
         body_style
     ))
 
@@ -454,14 +463,16 @@ def build_pdf(out_path):
             ('RIGHTPADDING', (0,0), (-1,-1), 2),
         ]))
         story.append(conv_tbl)
-        story.append(P("Figure 5. Iteration-level convergence dynamics. Left: PSNR ascent across HQS iterations. Right: logarithmic decay of relative solution residual, confirming numerical stabilization within 5–6 steps.", fig_caption_style))
+        story.append(P("Figure 5. Iteration-level convergence dynamics: TV-PGD (50 iterations) vs. DPIR (8 iterations). Left: PSNR ascent across iterations. Right: logarithmic decay of relative solution residual.", fig_caption_style))
 
     story.append(Spacer(1, 2))
-    story.append(P("9. Robustness Under Varying Noise Intensities", h1_style))
+    story.append(P("9. Robustness Under Coupled Blur and Noise Degradation", h1_style))
     story.append(P(
-        "To assess model stability under extreme degradation, we evaluated restorations across noise levels from &sigma; = 0.01 to &sigma; = 0.07. "
-        "As shown in Figures 6 and 7, reconstruction PSNR decreases monotonically and predictably. The DRUNet denoiser prior avoids hallucinations, "
-        "color fringing, or numerical divergence even under severe noise corruption.",
+        "To assess model stability under varying degradation severity, we evaluated three experimental conditions with coupled blur and noise parameters: "
+        "E1 (&sigma;<sub><i>b</i></sub> = 1.0, &sigma;<sub><i>n</i></sub> = 0.01), E2 (&sigma;<sub><i>b</i></sub> = 2.0, &sigma;<sub><i>n</i></sub> = 0.03), and "
+        "E3 (&sigma;<sub><i>b</i></sub> = 3.0, &sigma;<sub><i>n</i></sub> = 0.05). Because blur and noise parameters were scaled simultaneously across conditions, "
+        "these experiments evaluate joint degradation resilience rather than isolating the individual effects of blur or noise independently. As shown in Figures 6 and 7, "
+        "reconstruction PSNR degrades monotonically from E1 (35.05 dB) to E3 (25.05 dB), with DPIR avoiding visual artifacts across all three regimes.",
         body_style
     ))
 
@@ -479,30 +490,30 @@ def build_pdf(out_path):
             ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ]))
         story.append(rob_tbl)
-        story.append(P("Figures 6 & 7. Noise sensitivity analysis. Left: PSNR degradation curve versus noise standard deviation &sigma;. Right: visual restoration quality under increasing noise levels (&sigma; = 0.01 to 0.07).", fig_caption_style))
+        story.append(P("Figures 6 & 7. Robustness under coupled degradation (E1: &sigma;<sub><i>b</i></sub>=1.0, &sigma;<sub><i>n</i></sub>=0.01; E2: &sigma;<sub><i>b</i></sub>=2.0, &sigma;<sub><i>n</i></sub>=0.03; E3: &sigma;<sub><i>b</i></sub>=3.0, &sigma;<sub><i>n</i></sub>=0.05). Left: mean PSNR before and after DPIR. Right: Astronaut visual reconstructions across E1–E3.", fig_caption_style))
 
     story.append(Spacer(1, 2))
     story.append(P("10. Discussion and Engineering Trade-Off Analysis", h1_style))
     story.append(P(
-        "<b>Decomposition of Initialization Gain:</b> Our empirical data demonstrates a strictly positive (+0.182 dB, 100% win rate) "
-        "advantage for coarse PnP initialization. Crucially, the control condition reveals where this gain originates: approximately "
-        "65% (+0.118 dB) is produced simply by low-pass smoothing during resolution downsampling and bicubic upsampling, which suppresses "
-        "high-frequency observation noise before iterative splitting commences. Active DRUNet denoising at the coarse scale contributes the "
-        "remaining 35% (+0.064 dB) of the overall improvement.",
+        "<b>Hypothesis on Initialization Smoothing:</b> On this sample, coarse PnP initialization produced a strictly positive (+0.182 dB, 20/20 pairs) "
+        "advantage over direct DPIR. The observation-cycling control gained +0.118 dB (positive in 18/20 pairs), supporting the working hypothesis "
+        "that approximately 65% of the observed improvement arises from low-pass pre-smoothing during 2&times;2 downsampling and bilinear upsampling, "
+        "which attenuates high-frequency measurement noise before iterative splitting begins. Active coarse DRUNet denoising accounts for the remaining "
+        "35% (+0.064 dB). These observations reflect this specific configuration and should not be construed as universal causal proofs.",
         body_style
     ))
     story.append(P(
         "<b>Computational Complexity vs. Quality Payoff:</b> On an NVIDIA Tesla T4 GPU, coarse PnP initialization requires 0.3772 s per image "
         "compared to 0.2719 s for baseline direct DPIR—a 38.7% runtime increase. In scientific, astronomical, or clinical imaging workflows "
-        "where fidelity is paramount and processing is performed offline, a +0.18 dB gain for 0.1 s of extra GPU computation represents a highly "
-        "favorable trade-off. Conversely, for high-throughput mobile vision or video streaming, the runtime overhead outweighs the modest gain.",
+        "where fidelity is paramount and processing is performed offline, spending 0.1 s of extra GPU computation for consistent improvement represents a defensible "
+        "engineering choice. Conversely, for high-throughput mobile vision or video streaming, this compute overhead may outweigh the modest gain.",
         body_style
     ))
     story.append(P(
-        "<b>Spatial Frequency Dependency:</b> The strong discrepancy between smooth scenes (+0.397 dB on Coffee) and dense textures (+0.015 dB "
-        "on Chelsea) demonstrates that spatial downsampling operates as an anisotropic low-pass gate. When an image's diagnostic features reside "
-        "in low-to-medium frequencies, coarse optimization regularizes global structure effectively; when features are predominantly high-frequency, "
-        "coarse solves discard the critical spatial bandwidth required for reconstruction.",
+        "<b>Spatial Frequency Dependency:</b> The discrepancy between smooth scenes (+0.397 dB on Coffee) and dense textures (+0.015 dB on Chelsea) "
+        "indicates that resolution downsampling acts as an anisotropic low-pass filter. When an image's dominant energy resides in low-to-medium frequencies, "
+        "coarse optimization regularizes global structure effectively; when features are predominantly high-frequency, coarse solves discard the spatial bandwidth "
+        "necessary to reconstruct fine textural detail.",
         body_style
     ))
 
@@ -512,12 +523,13 @@ def build_pdf(out_path):
     # PAGE 6: Limitations, Reproducibility (Table 5), Conclusion, & REFERENCES
     # =========================================================================
     story.append(P("11. Limitations and Threats to Validity", h1_style))
-    story.append(P("We explicitly identify the following methodological and experimental constraints:", body_style))
+    story.append(P("We explicitly identify the following experimental and methodological constraints in this study:", body_style))
     limits = [
-        ("Image Sample Size: ", "Four images evaluated across five noise seeds establish consistency on this benchmark but do not support population-wide statistical generalization across complex natural image distributions."),
-        ("Heuristic Coarse Operator: ", "The coarse 64 &times; 64 blur operator was approximated via kernel downsampling rather than deriving a rigorous Galerkin restriction operator <b>A</b><sub><i>c</i></sub> = <b>R</b><b>A</b><b>P</b> [10]."),
-        ("Scope Delineation: ", "This study benchmarks deterministic DRUNet-based PnP-DPIR. It does not evaluate stochastic diffusion models or generative flow matching [11], nor untrained network priors [12]."),
-        ("Hardware Specificity: ", "All experiments were executed on a single cloud Tesla T4 GPU. Cross-hardware timing verification remains valuable future work.")
+        ("Sample Cohort: ", "Four images evaluated across five noise seeds (20 matched observations) demonstrate consistency on this sample, but repeated noise draws on the same four images are correlated and do not support population-wide statistical claims across natural image distributions."),
+        ("Heuristic Coarse Operator: ", "The coarse 64 &times; 64 blur model was constructed by parameterizing an approximate Gaussian kernel (&sigma;<sub><i>b</i></sub> = 1.0, &sigma;<sub><i>n</i></sub> = 0.015) rather than deriving a mathematically exact Galerkin restriction operator <b>A</b><sub><i>c</i></sub> = <b>R</b><b>A</b><b>P</b> [10]."),
+        ("Model Scope Delineation: ", "This study benchmarks deterministic DRUNet-based PnP-DPIR. It does not train or evaluate generative diffusion models or flow-matching algorithms [11], nor untrained network priors [12]."),
+        ("Coupled Degradation: ", "Experiments E1–E3 scaled blur and noise parameters simultaneously, preventing independent isolation of blur versus noise sensitivity."),
+        ("Execution Environment: ", "All runtime records reflect CUDA-synchronized execution on a single cloud Tesla T4 GPU; cross-hardware timing remains future work.")
     ]
     for lbl, txt in limits:
         story.append(P(f"• <b>{lbl}</b>{txt}", body_indent))
@@ -525,9 +537,9 @@ def build_pdf(out_path):
     story.append(Spacer(1, 1))
     story.append(P("12. Reproducibility Protocol and Software Environment", h1_style))
     story.append(P(
-        "All code is provided in <code>notebooks/DeepInverse_PnP_Image_Restoration.ipynb</code>. Running cells sequentially "
-        "reproduces all 60 trials and exports metrics to <code>results/step10_all_experiments.csv</code>. File integrity is verified "
-        "via cryptographic SHA-256 hashes recorded in <code>SHA256SUMS.txt</code>.",
+        "All code is provided in <code>notebooks/DeepInverse_PnP_Image_Restoration.ipynb</code>. Automated validation is implemented in "
+        "<code>scripts/validate_results.py</code> and verified via GitHub Actions. Metrics are archived in <code>results/step10_all_experiments.csv</code>, "
+        "and file integrity is documented via cryptographic SHA-256 hashes recorded in <code>SHA256SUMS.txt</code>.",
         body_style
     ))
 
@@ -546,10 +558,10 @@ def build_pdf(out_path):
 
     story.append(P("13. Conclusion and Future Work", h1_style))
     story.append(P(
-        "Two-level coarse-to-fine initialization yields a small (+0.182 dB) but strictly consistent (20/20 positive) improvement "
-        "for Plug-and-Play image restoration with deep priors. The benefit is driven primarily by low-pass initialization pre-filtering "
-        "with an active secondary contribution from coarse deep denoising, requiring 38.7% additional compute. Future research will explore "
-        "exact multigrid restriction operators to determine if multi-cycle V-cycles can amplify gains on large-scale (512 &times; 512+) images.",
+        "Two-level coarse-to-fine initialization yields a modest (+0.182 dB) but remarkably consistent (20/20 positive) improvement "
+        "for Plug-and-Play image restoration with deep denoiser priors on small RGB images. The effect is driven primarily by low-pass initialization "
+        "smoothing with an active secondary contribution from coarse denoising, requiring 38.7% additional compute. Future work will investigate "
+        "whether mathematically exact multigrid restriction operators can amplify benefits on higher-resolution (512 &times; 512+) imaging problems.",
         body_style
     ))
 

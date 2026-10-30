@@ -1,18 +1,16 @@
 <div align="center">
 
-# Plug-and-Play Image Restoration with Coarse-to-Fine Initialization
-
-### An Empirical Benchmark on Two-Level DRUNet Initialization using DeepInverse
+# Two-Level Coarse-to-Fine Initialization for Plug-and-Play Image Restoration: A Reproducible DeepInverse Benchmark
 
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.11-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![DeepInverse](https://img.shields.io/badge/DeepInverse-0.5.0-10B981?style=flat)](https://deepinv.github.io/deepinv/)
-[![Hardware](https://img.shields.io/badge/GPU-Tesla_T4_(16GB)-76B900?style=flat&logo=nvidia&logoColor=white)](#experimental-environment)
+[![Hardware](https://img.shields.io/badge/GPU-Tesla_T4_(16GB)-76B900?style=flat&logo=nvidia&logoColor=white)](#10-reproducibility-instructions)
 [![Technical Report](https://img.shields.io/badge/Technical_Report-6--Page_PDF-blue.svg)](DeepInverse_PnP_Research_Report.pdf)
-[![Reproducibility](https://img.shields.io/badge/Reproducibility-Level_5_Deterministic-emerald.svg)](SHA256SUMS.txt)
+[![Validation](https://img.shields.io/badge/Validation-Automated_Checks_Passing-emerald.svg)](scripts/validate_results.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[**Read 6-Page Technical Report (PDF)**](DeepInverse_PnP_Research_Report.pdf) • [**Launch in Google Colab**](https://colab.research.google.com/github/Hasnain006-nain/deepinverse-pnp-image-restoration/blob/main/notebooks/DeepInverse_PnP_Image_Restoration.ipynb) • [**Raw Numerical CSV Traces**](results/)
+[**Read 6-Page Research Report (PDF)**](DeepInverse_PnP_Research_Report.pdf) • [**Launch in Google Colab**](https://colab.research.google.com/github/Hasnain006-nain/deepinverse-pnp-image-restoration/blob/main/notebooks/DeepInverse_PnP_Image_Restoration.ipynb) • [**Raw Numerical CSV Traces**](results/) • [**Automated Validation**](scripts/validate_results.py)
 
 <br/>
 
@@ -22,204 +20,246 @@
 
 ---
 
-## 📌 Executive Summary
+## 1. Research Title and Concise Overview
 
-This repository hosts a controlled, open-science computational imaging benchmark investigating whether a **two-level coarse-to-fine initialization** improves Plug-and-Play (PnP) image restoration when paired with a deep denoiser prior.
+This repository provides a controlled, open-science computational imaging benchmark investigating whether an exploratory **two-level coarse-to-fine initialization strategy** improves Plug-and-Play (PnP) image restoration when paired with a deep residual denoiser prior.
 
-Using the open-source **[DeepInverse](https://deepinv.github.io/deepinv/)** library and pretrained **DRUNet** weights, we evaluated 60 independent restoration experiments across four canonical test images (`Astronaut`, `Chelsea`, `Coffee`, `Rocket`) degraded by synthetic Gaussian blur ($\sigma = 2.0$) and additive white Gaussian noise ($\sigma = 0.03$) over five fixed pseudo-random noise realizations.
+Using the open-source **[DeepInverse](https://deepinv.github.io/deepinv/)** framework [1] and pretrained **DRUNet** denoiser weights [2], we evaluated 60 reconstruction runs across 20 matched image-seed observations (four canonical test images: `astronaut`, `chelsea`, `coffee`, `rocket`, each evaluated under five pseudo-random noise realizations) degraded by synthetic Gaussian blur ($\sigma_b = 2.0$) and additive white Gaussian noise ($\sigma_n = 0.03$).
 
-> **Key Empirical Takeaway:** Coarse PnP initialization improves reconstruction PSNR across **100% of paired trials (+0.182 dB average gain)**, but requires **38.7% more wall-clock time**. A control experiment reveals that **65% of this benefit (+0.118 dB)** is produced solely by low-pass smoothing during resolution cycling, while coarse-level denoising contributes the remaining +0.064 dB.
+> **Core Empirical Finding:** Coarse PnP initialization yielded a higher reconstruction PSNR across **20 out of 20 matched pairs (+0.1820 dB average gain)** compared to standard direct DPIR, while requiring **38.7% more GPU execution time**. A controlled ablation reveals that **~65% of this benefit (+0.1183 dB)** is produced solely by low-pass smoothing during resolution cycling, with active coarse denoising providing the remaining +0.0637 dB. Benefits are concentrated on smooth surfaces (+0.3972 dB on `coffee`) and negligible on dense textures (+0.0149 dB on `chelsea`).
 
 ---
 
-## 🔬 Benchmark Methodology & Evaluated Pipelines
+## 2. Research Problem and Motivation
 
-All evaluations execute on identical degraded observations using an 8-iteration Half-Quadratic Splitting (HQS) schedule with fixed DRUNet weights. The only variable is the starting estimate $x_0$:
+Linear inverse problems in computational imaging require recovering an underlying uncorrupted scene $x \in \mathbb{R}^n$ from degraded measurements:
 
-| Pipeline ID | Strategy Name | Operational Description | Avg. Runtime (T4) | Compute Overhead |
+$$y = A x + n$$
+
+where $A$ is a linear forward operator (e.g., a blur point spread function) and $n \sim \mathcal{N}(0, \sigma^2 I)$ is additive measurement noise. Because $A$ is ill-conditioned and attenuates high spatial frequencies, direct pseudoinverse solutions severely amplify noise, requiring mathematical or learned image priors for regularization.
+
+Plug-and-Play (PnP) methods [3, 4, 5] replace analytical regularizers (such as Total Variation [7]) with high-capacity deep denoisers within variable-splitting schemes such as Half-Quadratic Splitting (HQS) [9] or ADMM. Zhang et al. [2] developed DPIR, integrating a Deep Residual U-Net (DRUNet) into HQS to produce state-of-the-art restorations across multiple inverse problems.
+
+Standard DPIR initializes its fine-scale solver directly from the degraded measurement: $x_0 = y$. Drawing inspiration from multigrid principles in scientific numerical computing [10], we investigate whether a coarse-scale warm-start provides a better-conditioned starting estimate that improves final restoration fidelity on small images.
+
+---
+
+## 3. Research Questions
+
+This benchmark systematically addresses four empirical questions:
+
+1. **Restoration Quality:** Does initializing fine-scale DPIR from an approximate coarse-level restoration improve objective PSNR and SSIM over standard direct initialization ($x_0 = y$)?
+2. **Mechanism Attribution:** How much of any observed gain is attributable to active coarse deep denoising versus the passive low-pass filtering inherent in resolution downsampling and upsampling?
+3. **Frequency Sensitivity:** How do restoration gains correlate with image spatial frequency distributions (broad smooth gradients vs. dense high-frequency textures)?
+4. **Computational Trade-Off:** Does the quality gain justify the additional runtime (+38.7%) incurred by executing a coarse restoration stage?
+
+---
+
+## 4. Experimental Methodology
+
+- **Benchmark Cohort:** Four standard images from `scikit-image` (`astronaut`, `chelsea`, `coffee`, `rocket`), standardized to $128 \times 128$ RGB pixels and normalized to $[0, 1]$.
+- **Degradation Model:** $7 \times 7$ Gaussian blur kernel with standard deviation $\sigma_b = 2.0$, followed by additive white Gaussian noise with standard deviation $\sigma_n = 0.03$.
+- **Replicate Structure:** Five pseudo-random noise realizations (seeds 2026, 2126, 2226, 2326, 2426 + image offset) applied to each image, yielding **20 matched image-seed observations**. Each observation $y$ was passed identically to all evaluated pipelines. Repeated seeds on the same four images are correlated at the image level and do not constitute independent image samples.
+- **Optimization Architecture:** Half-Quadratic Splitting (HQS) with an 8-iteration schedule using fixed pretrained DRUNet weights (no model retraining performed).
+- **Evaluation Metrics:** Clipped $[0, 1]$ RGB Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM) [8] computed against clean ground truth.
+- **Timing Protocol:** Wall-clock inference recorded with explicit CUDA synchronization (`torch.cuda.synchronize()`) on an NVIDIA Tesla T4 GPU (16 GB VRAM).
+
+---
+
+## 5. Method Comparison
+
+All pipelines utilize the identical pretrained DRUNet denoiser checkpoint and 8-iteration HQS schedule. The only variable across conditions is the initial state estimate $x_0$:
+
+| Pipeline ID | Strategy Name | Operational Description | Avg. Runtime (T4) | Relative Compute |
 |:---:|:---|:---|:---:|:---:|
-| **1** | **Direct DPIR** *(Baseline)* | Standard HQS optimization initialized directly from degraded observation: $x_0 = y$. | **0.2719 s** | Baseline ($1.00\times$) |
-| **2** | **Observation Init** *(Control)* | Degraded observation $y$ is downsampled to $64\times 64$ and immediately bicubic-upsampled back to $128\times 128$ to serve as $x_0$. No coarse denoiser is executed. | **0.2735 s** | $+0.6\%$ ($1.01\times$) |
-| **3** | **Coarse PnP Init** *(Proposed)* | Solve a complete DPIR problem at $64\times 64$ resolution with a scaled blur operator. Upsample the coarse solution to $128\times 128$ to initialize fine-scale DPIR. | **0.3772 s** | **$+38.7\%$ ($1.39\times$)** |
+| **1** | **Direct DPIR** *(Baseline)* | Standard optimization initialized directly from the noisy observation: $x_0 = y$. | **0.2719 s** | $1.00\times$ (baseline) |
+| **2** | **Observation Init** *(Control)* | Observation $y$ is downsampled via $2\times 2$ average pooling to $64\times 64$ and prolonged back to $128\times 128$ via PyTorch **bilinear interpolation** (`align_corners=False`) without coarse denoising, isolating resolution-cycling smoothing. | **0.2735 s** | $+0.6\%$ ($1.01\times$) |
+| **3** | **Coarse PnP Init** *(Proposed)* | Solve an approximate coarse forward model ($64\times 64$, blur $\sigma_b = 1.0$, noise $\sigma_n = 0.015$) with 8-iteration coarse DPIR. Prolong the coarse output via **bilinear interpolation** to warm-start fine-scale $128\times 128$ DPIR. | **0.3772 s** | **$+38.7\%$ ($1.39\times$)** |
+
+*Note on Coarse Operator:* The coarse blur model was approximated by parameterizing a Gaussian blur kernel with $\sigma_b = 1.0$ and noise $\sigma_n = 0.015$ on $64\times 64$, rather than deriving a mathematically exact Galerkin restriction operator $A_c = R A P$ [10].
 
 ---
 
-## 📊 Comprehensive Empirical Findings
+## 6. Main Quantitative Results
 
-### 1. Overall Aggregate Results (60 Runs, NVIDIA Tesla T4 GPU)
+### Method-Level Aggregates (20 Matched Observations, 60 Total Runs)
 
-| Initialization Strategy | Mean PSNR (dB) | Mean SSIM | Mean Wall-Clock Runtime | Relative Computational Cost |
+| Pipeline Strategy | Mean PSNR (dB) | Mean SSIM | Mean Runtime | Relative Cost |
 |:---|:---:|:---:|:---:|:---:|
-| Direct DPIR *(Baseline)* | 28.411 dB | 0.8588 | 0.2719 s | $1.00\times$ |
-| Observation Init *(Control)* | 28.530 dB | 0.8603 | 0.2735 s | $1.01\times$ |
-| **Coarse PnP Init *(Proposed)*** | **28.593 dB** | **0.8622** | **0.3772 s** | **$1.39\times$ (+38.7%)** |
+| Direct DPIR *(Baseline)* | 28.4112 dB | 0.8588 | 0.2719 s | $1.00\times$ |
+| Observation Init *(Control)* | 28.5295 dB | 0.8603 | 0.2735 s | $1.01\times$ (+0.6%) |
+| **Coarse PnP Init *(Proposed)*** | **28.5932 dB** | **0.8622** | **0.3772 s** | **$1.39\times$ (+38.7%)** |
 
----
+### Paired Differences Analysis (Identical Degradation Instances)
 
-### 2. Paired Differences Analysis (Identical Degradation Instances)
+Evaluating paired differences ($\Delta\text{PSNR} = \text{PSNR}_{\text{method A}} - \text{PSNR}_{\text{method B}}$) on identical degraded inputs isolates algorithmic differences from noise sample variance:
 
-Because noise variance alters absolute PSNR across seeds, paired differences ($\Delta\text{PSNR} = \text{PSNR}_{\text{method A}} - \text{PSNR}_{\text{method B}}$) evaluate performance on identical degraded inputs:
-
-| Paired Comparison | Mean $\Delta$PSNR Gain | Std. Deviation | Positive Trials / Total | Win Rate |
+| Paired Comparison | Mean $\Delta$PSNR | Std. Dev. | Positive Pairs / Total | Empirical Win Rate |
 |:---|:---:|:---:|:---:|:---:|
-| **Coarse PnP vs. Direct DPIR** | **+0.1820 dB** | 0.162 dB | **20 / 20** | **100.0%** |
-| **Observation Init vs. Direct DPIR** | **+0.1183 dB** | 0.114 dB | **20 / 20** | **100.0%** |
-| **Coarse PnP vs. Observation Init** | **+0.0637 dB** | 0.051 dB | **20 / 20** | **100.0%** |
+| **Coarse PnP vs. Direct DPIR** | **+0.1820 dB** | 0.1714 dB | **20 / 20** | **100.0%** |
+| **Observation Init vs. Direct DPIR** | **+0.1183 dB** | 0.1222 dB | **18 / 20** | **90.0%** |
+| **Coarse PnP vs. Observation Init** | **+0.0637 dB** | 0.0585 dB | **20 / 20** | **100.0%** |
+
+*Observation Init Details:* Observation initialization was positive in 18 of 20 pairs, with minor negative differences on Chelsea seed 2227 (-0.0008 dB) and Rocket seed 2029 (-0.0018 dB).
 
 ---
 
-### 3. Image Frequency Sensitivity Breakdown
+## 7. Initialization Ablation Analysis
 
-The magnitude of improvement depends directly on the frequency spectrum of the underlying image:
+The magnitude of improvement correlates directly with the spatial frequency distribution of the benchmark image:
 
-| Image | Dominant Content Characteristics | Coarse vs. Direct | Coarse vs. Obs Init | Obs Init vs. Direct |
+| Test Image | Dominant Content Characteristics | Coarse vs. Direct | Coarse vs. Obs Init | Obs Init vs. Direct |
 |:---|:---|:---:|:---:|:---:|
-| **Coffee** | Broad smooth gradients, uniform cup surface | **+0.397 dB** | +0.112 dB | +0.285 dB |
-| **Astronaut** | Mixed structural contours, portrait details | **+0.287 dB** | +0.112 dB | +0.175 dB |
-| **Rocket** | Sharp high-contrast boundary edges | **+0.029 dB** | +0.024 dB | +0.005 dB |
-| **Chelsea** | High-frequency fur texture, dense whiskers | **+0.015 dB** | +0.007 dB | +0.008 dB |
+| **Coffee** | Broad smooth gradients, uniform ceramic cup surface | **+0.3972 dB** | +0.1118 dB | +0.2854 dB |
+| **Astronaut** | Mixed structural contours, portrait details | **+0.2868 dB** | +0.1120 dB | +0.1748 dB |
+| **Rocket** | Sharp high-contrast boundary edges | **+0.0289 dB** | +0.0235 dB | +0.0054 dB |
+| **Chelsea** | High-frequency fur texture, dense whiskers | **+0.0149 dB** | +0.0073 dB | +0.0076 dB |
 
-> **Frequency Insight:** Coarse resolution cycling acts as a pre-smoothing filter. For images with large continuous tonal areas (Coffee, Astronaut), this accelerates accurate gradient reconstruction. For high-frequency texture images (Chelsea, Rocket), $64\times 64$ downsampling removes critical high frequencies, yielding virtually zero net benefit.
+<div align="center">
+<img src="figures/step10_initialization_ablation.png" width="820" alt="Initialization Ablation">
+<p><i>Figure 2: Mean paired PSNR differences (gain in dB relative to Direct DPIR) across the four benchmark images for Observation Initialization and Coarse PnP Initialization (averaged over five noise realizations per image).</i></p>
+</div>
+
+> **Frequency Mechanism Hypothesis:** Spatial downsampling acts as an anisotropic low-pass filter. For images dominated by low-to-medium frequencies (`coffee`, `astronaut`), resolution cycling suppresses observation noise and accelerates gradient recovery. For texture-dense images (`chelsea`, `rocket`), $64\times 64$ downsampling removes the critical spatial frequencies required to reconstruct fine details, yielding minimal net gain.
 
 ---
 
-## 🖼️ Visual Results & Diagnostic Figures
+## 8. Visual Reconstruction Examples
 
-### 1. Forward Degradation Model
+### Forward Degradation Model
 <div align="center">
-<img src="figures/step2_degradation.png" width="820" alt="Forward Degradation Model">
-<p><i>Figure 1: Clean ground truth, point spread function (PSF), 2D frequency spectrum showing high-frequency attenuation, and resulting degraded observation.</i></p>
+<img src="figures/step2_degradation.png" width="800" alt="Forward Degradation Model">
+<p><i>Figure 1: Clean reference image (128×128) and synthetically degraded observation under Gaussian blur (&sigma;<sub>b</sub> = 2.0) and additive Gaussian noise (&sigma;<sub>n</sub> = 0.03).</i></p>
 </div>
 
----
-
-### 2. Baseline Comparison: Classical TV-PGD vs. Learned DRUNet DPIR
+### Classical TV-PGD vs. Learned DRUNet DPIR
 <div align="center">
-<img src="figures/step7_method_comparison.png" width="840" alt="TV-PGD vs DPIR">
-<p><i>Figure 2: Ground truth, degraded input, Total Variation (TV-PGD) reconstruction, and DRUNet DPIR output.</i></p>
+<img src="figures/step7_method_comparison.png" width="820" alt="TV-PGD vs DPIR">
+<p><i>Figure 3: Clean ground truth, degraded observation, Total Variation (TV-PGD) reconstruction, and learned DRUNet DPIR output.</i></p>
 </div>
 
-| Image | Degraded Input | Classical TV-PGD [7] | Learned DRUNet DPIR [2] | PSNR Gain | TV Runtime | DPIR Runtime |
+| Benchmark Image | Degraded Input | Classical TV-PGD [7] | Learned DRUNet DPIR [2] | PSNR Gain | TV Runtime | DPIR Runtime |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Astronaut** | 19.18 dB | 22.23 dB | **24.13 dB** | **+1.90 dB** | 2.64 s | **0.37 s** *(7.1× faster)* |
 | **Chelsea** | 24.57 dB | 27.22 dB | **29.74 dB** | **+2.52 dB** | 2.66 s | **0.35 s** *(7.6× faster)* |
 | **Coffee** | 22.12 dB | 25.95 dB | **27.84 dB** | **+1.89 dB** | 2.35 s | **0.37 s** *(6.4× faster)* |
 | **Rocket** | 25.92 dB | 29.15 dB | **31.81 dB** | **+2.66 dB** | 2.61 s | **0.36 s** *(7.3× faster)* |
 
----
-
-### 3. Stage-by-Stage Visual Progression (Two-Level Restoration)
+### Stage-by-Stage Visual Progression (Two-Level Pipeline)
 <div align="center">
-<img src="figures/step9_multilevel_comparison.png" width="860" alt="Multilevel Stages">
-<p><i>Figure 3: Two-level progression: degraded observation, coarse 64×64 solve, bicubic prolongation, and fine-scale 128×128 refined output.</i></p>
+<img src="figures/step9_multilevel_comparison.png" width="840" alt="Multilevel Stages">
+<p><i>Figure 4: Progression through the two-level pipeline: clean reference, degraded observation, direct DPIR, coarse 64×64 restoration, and two-level DPIR output using bilinear prolongation.</i></p>
 </div>
 
 ---
 
-### 4. Per-Seed Ablation Distribution Across All Test Images
-<div align="center">
-<img src="figures/step10_initialization_ablation.png" width="840" alt="Initialization Ablation">
-<p><i>Figure 4: Grouped bar chart comparing PSNR per random seed across Direct DPIR (blue), Observation Init (orange), and Coarse PnP Init (green).</i></p>
-</div>
+## 9. Convergence and Robustness Analysis
 
----
-
-### 5. Convergence Behavior and Numerical Residual Stability
+### Iteration-Level Convergence Behavior
 <div align="center">
 <img src="figures/step8_psnr_vs_iterations.png" width="410" alt="PSNR vs Iterations">
 <img src="figures/step8_convergence_residual.png" width="410" alt="Residual Decay">
-<p><i>Figure 5: Left: PSNR progression over 8 HQS iterations. Right: Logarithmic relative residual decay demonstrating numerical stability within 5 iterations.</i></p>
+<p><i>Figure 5: Left: PSNR progression across iterations for TV-PGD (50 steps) and DPIR (8 steps). Right: Logarithmic decay of relative iterate residual ||x<sup>(k)</sup> - x<sup>(k-1)</sup>|| / ||x<sup>(k)</sup>|| demonstrating numerical stabilization within 5 iterations for DPIR. (Note: Empirical residual decay does not constitute a formal mathematical fixed-point convergence proof).</i></p>
 </div>
 
----
-
-### 6. Robustness under Scaled Noise Intensities ($\sigma = 0.01$ to $0.07$)
+### Robustness Under Coupled Blur and Noise Degradation
 <div align="center">
 <img src="figures/step6_psnr_robustness.png" width="370" alt="PSNR Robustness">
 <img src="figures/step6_visual_comparison.png" width="470" alt="Visual Robustness">
-<p><i>Figure 6: Monotonic PSNR degradation and qualitative stability across noise standard deviations from 0.01 to 0.07.</i></p>
+<p><i>Figure 6: Robustness under coupled degradation regimes (E1: &sigma;<sub>b</sub>=1.0, &sigma;<sub>n</sub>=0.01; E2: &sigma;<sub>b</sub>=2.0, &sigma;<sub>n</sub>=0.03; E3: &sigma;<sub>b</sub>=3.0, &sigma;<sub>n</sub>=0.05). Left: Mean PSNR before and after DPIR restoration. Right: Astronaut visual reconstructions across E1, E2, and E3. Note: Blur and noise were scaled simultaneously, so these experiments evaluate combined degradation resilience rather than isolating blur or noise independently.</i></p>
 </div>
 
 ---
 
-## ⚙️ Quickstart & Reproduction Guide
+## 10. Reproducibility Instructions
 
-### Option A: Run Online in Google Colab (Recommended)
+### Option A: Automated Results Validation (Zero-Dependency, Instant)
 
-Click the badge below to launch the complete notebook in Google Colab with free GPU access:
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hasnain006-nain/deepinverse-pnp-image-restoration/blob/main/notebooks/DeepInverse_PnP_Image_Restoration.ipynb)
-
-1. Select **Runtime → Change runtime type → T4 GPU**.
-2. Execute cells top-to-bottom to run the complete 60-trial benchmark.
-
----
-
-### Option B: Local Environment Execution
+Validate the entire 60-trial experimental record against documented aggregates without downloading weights or requiring a GPU:
 
 ```bash
 # Clone the repository
 git clone https://github.com/Hasnain006-nain/deepinverse-pnp-image-restoration.git
 cd deepinverse-pnp-image-restoration
 
-# Create and activate virtual environment
+# Run automated validation (uses standard library Python)
+python scripts/validate_results.py
+```
+
+### Option B: Run in Google Colab (Full Experimental Execution)
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hasnain006-nain/deepinverse-pnp-image-restoration/blob/main/notebooks/DeepInverse_PnP_Image_Restoration.ipynb)
+
+1. Open the notebook in Google Colab using the badge above.
+2. Select **Runtime → Change runtime type → T4 GPU**.
+3. Execute cells sequentially to reproduce all 60 restoration trials and re-export CSV traces.
+
+### Option C: Local Environment Setup & PDF Report Compilation
+
+```bash
+# Set up virtual environment
 python -m venv venv
-# Linux/macOS:
+# Linux / macOS:
 source venv/bin/activate
 # Windows PowerShell:
 .\venv\Scripts\Activate.ps1
 
-# Install required dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Recompile the 6-page research report PDF
+# Recompile publication-grade 6-page research report PDF
 python scripts/generate_pdf_report.py
 ```
 
----
-
-## 💻 Documented Hardware & Software Environment
+### Documented Benchmark Environment
 
 | Component | Specification | Verified Version |
 |:---|:---|:---|
-| **Python Runtime** | CPython | `3.13.16` |
-| **Deep Learning Framework** | PyTorch | `2.11.0+cu130` |
-| **Computational Imaging Package** | DeepInverse | `0.5.0` |
+| **Python Runtime** | CPython standard distribution | `3.13.16` |
+| **Deep Learning Framework** | PyTorch with CUDA runtime | `2.11.0+cu130` |
+| **Computational Imaging Package** | DeepInverse core library [1] | `0.5.0` |
 | **Scientific Computing** | NumPy / SciPy | `2.1.3` / `1.14.1` |
 | **Visualization & Processing** | Matplotlib / scikit-image | `3.10.0` / `0.25.2` |
-| **Document Compiler** | ReportLab | `5.1.0` |
-| **GPU Hardware** | NVIDIA Tesla T4 | 16 GB VRAM |
+| **Technical Report Compiler** | ReportLab PDF engine | `5.1.0` |
+| **Hardware Platform** | NVIDIA Tesla T4 GPU | 16 GB GDDR6 VRAM |
 
 File integrity is cryptographically validated using SHA-256 hashes recorded in [`SHA256SUMS.txt`](SHA256SUMS.txt).
 
 ---
 
-## 📁 Repository Organization
+## 11. Repository Organization
 
 ```
 deepinverse-pnp-image-restoration/
-├── README.md                            # Comprehensive benchmark documentation
-├── DeepInverse_PnP_Research_Report.pdf  # 6-page academic research report PDF
+├── .github/
+│   └── workflows/
+│       └── validate.yml                 # Automated CI results validation workflow
+├── README.md                            # Comprehensive, audited research documentation
+├── DeepInverse_PnP_Research_Report.pdf  # Publication-grade 6-page research report PDF
 ├── RESEARCH_SUMMARY.md                  # Concise numerical audit summary
 ├── LICENSE                              # MIT License
-├── requirements.txt                     # Pinned Python package dependencies
-├── environment.json                     # Environment configuration dump
-├── SHA256SUMS.txt                       # Cryptographic file hashes
+├── requirements.txt                     # Pinned package dependencies
+├── environment.json                     # Environment configuration record
+├── SHA256SUMS.txt                       # Cryptographic SHA-256 file hashes
 │
 ├── notebooks/
-│   └── DeepInverse_PnP_Image_Restoration.ipynb # Full executable Colab notebook
+│   └── DeepInverse_PnP_Image_Restoration.ipynb # Full executable benchmark notebook
 │
 ├── results/                             # Complete raw CSV execution traces (13 files)
 │   ├── step10_all_experiments.csv       # All 60 individual trial metrics
-│   ├── step10_paired_comparison.csv     # Paired delta metrics
+│   ├── step10_paired_comparison.csv     # Paired difference traces
 │   ├── step11_method_summary.csv        # Aggregate metrics per pipeline
 │   ├── step11_image_summary.csv         # Aggregate metrics per image
-│   ├── step7_tv_vs_dpir_results.csv     # TV vs DPIR comparative results
+│   ├── step6_robustness_full_results.csv# Robustness trial metrics (E1-E3)
+│   ├── step6_robustness_summary.csv     # Robustness condition summary
+│   ├── step7_tv_vs_dpir_results.csv     # TV-PGD vs DPIR benchmark metrics
 │   └── step8_convergence_metrics.csv    # Iteration-level convergence traces
 │
-├── figures/                             # 10 publication-quality research figures
+├── figures/                             # Publication-quality research figures
 │   ├── deepinverse_restoration_comparison.png
 │   ├── step2_degradation.png
+│   ├── step6_psnr_robustness.png
+│   ├── step6_visual_comparison.png
 │   ├── step7_method_comparison.png
 │   ├── step8_convergence_residual.png
 │   ├── step8_psnr_vs_iterations.png
@@ -230,23 +270,25 @@ deepinverse-pnp-image-restoration/
 │   └── DeepInverse_PnP_Research_Report.pdf # Mirrored 6-page report PDF
 │
 └── scripts/
-    └── generate_pdf_report.py           # ReportLab PDF compiler script
+    ├── generate_pdf_report.py           # ReportLab 6-page PDF compiler script
+    └── validate_results.py              # Automated CSV results validation script
 ```
 
 ---
 
-## ⚠️ Limitations & Scoping Statement
+## 12. Limitations & Scoping Statement
 
-1. **Sample Cohort:** The benchmark evaluates four images over five noise seeds (20 paired trials). While sufficient to confirm consistent paired behavior on this sample, it does not represent a population-wide claim across heterogeneous datasets.
-2. **Heuristic Coarse Forward Operator:** The $64\times 64$ blur operator was formed by bicubic resizing of the fine blur kernel rather than constructing a true Galerkin restriction operator $A_c = R A P$ [10].
-3. **Model Scope:** This project benchmarks classical and deep denoiser Plug-and-Play restoration (DRUNet-DPIR). It does not implement diffusion models or flow-matching algorithms [11], nor untrained network priors [12].
-4. **Execution Ledger:** All timing data reflects CUDA-synchronized single-session execution on an NVIDIA Tesla T4 GPU.
+1. **Sample Cohort:** The benchmark evaluates four standard images over five noise seeds (20 matched observations). Replicates on the same image are correlated; sixty runs across four images do not constitute sixty statistically independent image samples. Generalization across natural image populations requires broader multi-dataset evaluation.
+2. **Heuristic Coarse Forward Operator:** The $64\times 64$ coarse blur model was approximated by parameterizing a Gaussian blur kernel with $\sigma_b = 1.0$ and noise $\sigma_n = 0.015$, rather than deriving a mathematically exact Galerkin restriction operator $A_c = R A P$ [10].
+3. **Coupled Robustness Scope:** Experiments E1–E3 scaled blur and noise parameters simultaneously ($\sigma_b \in \{1.0, 2.0, 3.0\}, \sigma_n \in \{0.01, 0.03, 0.05\}$). These tests evaluate combined degradation resilience and do not isolate blur from noise.
+4. **Model Scoping Declaration:** This project benchmarks classical and deep denoiser Plug-and-Play restoration (DRUNet-DPIR). **No generative diffusion model or flow-matching algorithm was implemented or trained.**
+5. **Execution Ledger:** All timing data reflects CUDA-synchronized execution on a single cloud NVIDIA Tesla T4 GPU session.
 
 ---
 
-## 📚 Verified Academic References
+## 13. Academic References
 
-All 12 citations are primary, peer-reviewed publications verified against official DOI and indexing records, corresponding to Section 14 of the research report:
+All 12 citations are primary, peer-reviewed publications verified against official DOI and indexing records, corresponding directly to Section 14 of the research report:
 
 1. **J. Tachella, M. Terris, S. Hurault, A. Wang, et al.**, *"DeepInverse: A Python package for solving imaging inverse problems with deep learning,"* *Journal of Open Source Software (JOSS)*, vol. 10, no. 115, p. 8923, 2025.  
    DOI: [`10.21105/joss.08923`](https://doi.org/10.21105/joss.08923) • arXiv: [`2505.20160`](https://arxiv.org/abs/2505.20160)
