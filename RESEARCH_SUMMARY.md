@@ -38,7 +38,7 @@ The average coarse-to-fine runtime is **38.7% greater** than direct DPIR. Gains 
 
 These data support a **small but consistently positive paired PSNR change on this particular sample and configuration**, at higher computational cost. They do **not** establish general superiority, model-independent convergence, statistical significance across image populations, or a new multilevel method. Seed replicates on the same four pictures are correlated at the image level. The approximate coarse inverse operator was not derived as an exact restriction of the fine acquisition model. Additional datasets, independently tuned baselines, matched compute budgets, and uncertainty analysis are future work.
 
-**No flow-matching model was trained or tested.** This is a related preparatory exercise, not a reproduction of the Inria multilevel flow-matching proposal.
+**No flow-matching model was trained or tested.** This study benchmarks standard DRUNet-based PnP-DPIR with coarse-to-fine initialization, distinct from generative flow-matching proposals.
 
 ## Reproduction and provenance
 

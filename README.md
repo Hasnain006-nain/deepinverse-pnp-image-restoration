@@ -13,6 +13,7 @@
 [![Python](https://img.shields.io/badge/python-3.13-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/pytorch-2.11-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![DeepInverse](https://img.shields.io/badge/deepinverse-0.5.0-10B981?style=flat)](https://deepinv.github.io/deepinv/)
+[![Report](https://img.shields.io/badge/Research_Report-6--Page_PDF-blue.svg)](DeepInverse_PnP_Research_Report.pdf)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 
 </div>
@@ -246,13 +247,15 @@ deepinverse-pnp-image-restoration/
 
 ## References
 
-1. J. Tachella et al., "DeepInverse: a Python package for solving imaging inverse problems with deep learning," arXiv:2505.20160, 2025. [[arXiv]](https://arxiv.org/abs/2505.20160)
+1. J. Tachella, M. Terris, S. Hurault, A. Wang, et al., "DeepInverse: A Python package for solving imaging inverse problems with deep learning," *Journal of Open Source Software*, vol. 10, no. 115, p. 8923, 2025. [[DOI: 10.21105/joss.08923](https://doi.org/10.21105/joss.08923)] [[arXiv:2505.20160](https://arxiv.org/abs/2505.20160)]
 
-2. K. Zhang, Y. Li, W. Zuo, L. Zhang, L. Van Gool, R. Timofte, "Plug-and-Play Image Restoration with Deep Denoiser Prior," IEEE TPAMI, vol. 44, no. 10, pp. 6360–6376, 2022. [[DOI]](https://doi.org/10.1109/TPAMI.2021.3088914)
+2. K. Zhang, Y. Li, W. Zuo, L. Zhang, L. Van Gool, R. Timofte, "Plug-and-Play Image Restoration with Deep Denoiser Prior," *IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)*, vol. 44, no. 10, pp. 6360–6376, Oct. 2022. [[DOI: 10.1109/TPAMI.2021.3088914](https://doi.org/10.1109/TPAMI.2021.3088914)]
 
-3. S. V. Venkatakrishnan, C. A. Bouman, B. Wohlberg, "Plug-and-Play Priors for Model Based Reconstruction," IEEE GlobalSIP, pp. 945–948, 2013. [[DOI]](https://doi.org/10.1109/GlobalSIP.2013.6737048)
+3. S. V. Venkatakrishnan, C. A. Bouman, B. Wohlberg, "Plug-and-Play Priors for Model Based Reconstruction," in *IEEE Global Conference on Signal and Information Processing (GlobalSIP)*, pp. 945–948, Dec. 2013. [[DOI: 10.1109/GlobalSIP.2013.6737048](https://doi.org/10.1109/GlobalSIP.2013.6737048)]
 
-4. S. Martin, A. Gagneux, P. Hagemann, G. Steidl, "Plug-and-Play Image Restoration with Flow Matching," ICLR, 2025. [[OpenReview]](https://openreview.net/forum?id=V2c2YxK0eG)
+4. S. Martin, A. Gagneux, P. Hagemann, G. Steidl, "PnP-Flow: Plug-and-Play Image Restoration with Flow Matching," in *International Conference on Learning Representations (ICLR)*, 2025. [[OpenReview](https://openreview.net/forum?id=V2c2YxK0eG)] [[arXiv:2410.21200](https://arxiv.org/abs/2410.21200)]
+
+5. L. I. Rudin, S. Osher, E. Fatemi, "Nonlinear total variation based noise removal algorithms," *Physica D: Nonlinear Phenomena*, vol. 60, no. 1–4, pp. 259–268, 1992. [[DOI: 10.1016/0167-2789(92)90242-F](https://doi.org/10.1016/0167-2789(92)90242-F)]
 
 ---
 
